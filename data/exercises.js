@@ -64,6 +64,24 @@ export const SCIENTIFIC_SOURCES = [
     pmid: '37301370',
     url: 'https://pubmed.ncbi.nlm.nih.gov/37301370/',
     takeaway: 'PNF-Dehntechniken (Anspannen–Loslassen) und statisches Dehnen erzielen langfristig die größten Zuwächse im Gelenk-Bewegungsumfang.'
+  },
+  {
+    id: 'hayden-2021',
+    title: 'Exercise therapy for chronic low back pain',
+    authors: 'Hayden J. A., Ellis J., Ogilvie R., Malmivaara A., van Tulder M. W.',
+    journal: 'Cochrane Database of Systematic Reviews (2021)',
+    pmid: '34580864',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/34580864/',
+    takeaway: 'Strukturierte Bewegungstherapie senkt chronische Kreuzschmerzen und verbessert die Alltagsfunktion zuverlässig im Vergleich zu keiner Intervention.'
+  },
+  {
+    id: 'hayden-2023-who',
+    title: 'Systematic Review to Inform a World Health Organization (WHO) Clinical Practice Guideline: Benefits and Harms of Structured Exercise Programs for Chronic Primary Low Back Pain in Adults',
+    authors: 'Hayden J. A. et al.',
+    journal: 'Journal of Occupational Rehabilitation (2023)',
+    pmid: '37991647',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/37991647/',
+    takeaway: 'Die WHO-Leitlinie empfiehlt regelmäßige, strukturierte Bewegungs- und Rumpfprogramme als zentrale nicht-medikamentöse Maßnahme bei chronischem Kreuzschmerz.'
   }
 ];
 
@@ -2097,118 +2115,252 @@ export const EXERCISES = [
       'Brustmuskel verkrampfen oder Schultern nach hinten einklemmen.',
       'Ellenbogen einknicken oder ins Hohlkreuz fallen.'
     ]
+  },
+  {
+    id: 'cat-camel-lws',
+    name: 'Cat-Camel (Sanfte Wirbelsäulen-Mobilisation)',
+    phase: 2,
+    region: 'bws-ruecken',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: false,
+    defaultSeconds: 60,
+    timerMode: 'hold',
+    targetZone: 'Lenden- & Brustwirbelsäule (schmerzfreie Durchbewegung)',
+    svgPose: 'quadruped-cat-camel',
+    bodyHotspots: [{ x: 50, y: 42, view: 'side' }],
+    image: null,
+    setup: [
+      'In den Vierfüßlerstand gehen: Hände schulterbreit unter den Schultern, Knie hüftbreit unter den Hüften.'
+    ],
+    execution: [
+      'Langsam die Wirbelsäule in einen sanften Rundrücken (Katze) bewegen: Becken einrollen, Bauchnabel leicht einziehen, Kopf locker senken.',
+      'Danach fließend in eine sanfte, kontrollierte Gegenbewegung (Kamel) wechseln: Brustbein leicht heben, Becken kippen – ausschließlich im schmerzfreien Bereich ohne End-Range-Gewalt.'
+    ],
+    breathing: 'Beim Einrollen in die Katze ruhig ausatmen, beim sanften Öffnen einatmen.',
+    commonMistakes: [
+      'Mit Gewalt ins tiefe Hohlkreuz oder in einen schmerzhaften Rundrücken pressen.',
+      'Bewegung zu schnell und ruckartig ausführen.'
+    ]
+  },
+  {
+    id: 'mcgill-bird-dog',
+    name: 'McGill Bird-Dog (Neutrale LWS-Stabilisation)',
+    phase: 3,
+    region: 'rumpf',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: true,
+    defaultSeconds: 60,
+    timerMode: 'interval',
+    timerPhases: [
+      { label: 'Runde 1 · Diagonal strecken', seconds: 8, cue: 'Ferse nach hinten rausschieben & Faust nach vorn – Becken waagerecht!' },
+      { label: 'Runde 1 · Kurz absetzen', seconds: 2, cue: 'Kurz absetzen & Rumpfspannung neu aufbauen' },
+      { label: 'Runde 2 · Diagonal strecken', seconds: 8, cue: '360°-Bracing halten, kein Hohlkreuz' },
+      { label: 'Runde 2 · Kurz absetzen', seconds: 2, cue: 'Kurz absetzen & neu stabilisieren' },
+      { label: 'Runde 3 · Diagonal strecken', seconds: 8, cue: 'Ferse schiebt weg, Schulter bleibt tief' },
+      { label: 'Runde 3 · Kurz absetzen', seconds: 2, cue: 'Kurz absetzen & atmen' },
+      { label: 'Runde 4 · Diagonal strecken', seconds: 8, cue: 'Becken kippt nicht auf – ruhige Kontrolle' },
+      { label: 'Runde 4 · Kurz absetzen', seconds: 2, cue: 'Kurz absetzen & neu zentrieren' },
+      { label: 'Runde 5 · Diagonal strecken', seconds: 8, cue: 'Saubere neutrale LWS-Linie halten' },
+      { label: 'Runde 5 · Kurz absetzen', seconds: 2, cue: 'Kurz absetzen' },
+      { label: 'Runde 6 · Diagonal strecken', seconds: 8, cue: 'Letzte Wiederholung voll stabil halten!' },
+      { label: 'Runde 6 · Beenden', seconds: 2, cue: 'Sauber absetzen' }
+    ],
+    targetZone: 'Multifidi, Rückenstrecker & tiefe Rumpf-Koordination',
+    svgPose: 'quadruped-bird-dog',
+    bodyHotspots: [{ x: 52, y: 46, view: 'side' }],
+    image: null,
+    setup: [
+      'Vierfüßlerstand mit neutraler Wirbelsäule und moderater 360°-Bauchspannung (Bracing).'
+    ],
+    execution: [
+      'Die Ferse eines Beins flach und gerade nach hinten rausschieben (Bein nicht hochreißen) und gleichzeitig den diagonalen Arm mit geballter Faust nach vorn strecken.',
+      'Becken und Lendenwirbelsäule bleiben dabei absolut waagerecht. 6–8 Sekunden isometrisch halten, kurz absetzen und wiederholen.'
+    ],
+    breathing: 'Unter leichter Bauchspannung ruhig weiteratmen.',
+    commonMistakes: [
+      'Bein zu hoch heben und dadurch ins Hohlkreuz kippen.',
+      'Becken zur Seite aufdrehen.'
+    ]
+  },
+  {
+    id: 'mcgill-side-plank',
+    name: 'McGill Side Plank (Seitstütz für QL & LWS)',
+    phase: 3,
+    region: 'rumpf',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: true,
+    defaultSeconds: 45,
+    timerMode: 'hold',
+    targetZone: 'M. quadratus lumborum, schräge Bauchmuskeln & seitliche Hüfte',
+    svgPose: 'side-plank-mcgill',
+    bodyHotspots: [{ x: 46, y: 45, view: 'front' }],
+    image: null,
+    setup: [
+      'Seitlich auf den Unterarm legen, Ellenbogen genau unter der Schulter. Freie Hand liegt stabilisierend auf der gegenüberliegenden Schulter.',
+      'Einfach: Knie 90° angewinkelt; Schwer: Beine gestreckt, oberer Fuß steht vor dem unteren (Ferse-Zehe).'
+    ],
+    execution: [
+      'Rumpf aktiv anspannen (Bracing) und die Hüfte nach vorn-oben anheben, bis Schulter, Hüfte und Knie/Knöchel eine gerade Linie bilden.',
+      'Position ruhig und ohne Durchhängen halten.'
+    ],
+    breathing: 'Gleichmäßig weiteratmen, Schulter aktiv vom Boden wegdrücken.',
+    commonMistakes: [
+      'Hüfte nach hinten abknicken lassen statt sie nach vorn in die Linie zu schieben.',
+      'Schulter sinkt Richtung Ohr ein.'
+    ],
+    variants: [
+      'Einfache Variante: Auf den gebeugten Knien abstützen.',
+      'Schwere Variante: Auf gestreckten Beinen (Füße hintereinander).'
+    ]
   }
 ];
 
 export const ROUTINES = [
   {
+    id: 'low-back-pain',
+    title: 'Low Back Pain · Rücken-Entlastung',
+    subtitle: 'Evidenzbasierte Physio-Routine',
+    badge: 'Physio-Fokus',
+    accent: 'lime',
+    regions: ['rumpf', 'huefte-beine', 'bws-ruecken'],
+    goal: 'Löst Hüft-/Gesäßspannung, mobilisiert LWS & BWS schmerzfrei und stabilisiert nach McGill. Bei ausstrahlenden Schmerzen oder Taubheit ärztlich abklären.',
+    exerciseIds: [
+      'ql-release',
+      'piriformis-release',
+      'glutaeus-medius-release',
+      'tfl-release',
+      'adduktor-release-ellenbogen',
+      'cat-camel-lws',
+      'hueftkapsel-distraktion',
+      'couch-stretch',
+      'z-sitz-pnf',
+      'taube-auf-kiste',
+      'beinbeuger-stretch',
+      'luftberge-welle',
+      'bracing-atmung',
+      'ruecken-stabilisierung-bauchatmung',
+      'mcgill-bird-dog',
+      'mcgill-side-plank',
+      'l-aktivierung'
+    ]
+  },
+  {
     id: 'all-around',
     title: 'Ganzkörper-Reset',
-    subtitle: '25 Min · Wissenschaftliche 4-Phasen-Abfolge',
-    badge: 'Empfohlen',
-    accent: 'lime',
-    durationLabel: '25 Min',
-    goal: 'Löst Hauptengpässe von Fuß bis Nacken und verankert aufrechte Haltung.',
+    subtitle: 'Wissenschaftliche 4-Phasen-Abfolge',
+    badge: 'Ganzkörper',
+    accent: 'lavender',
+    regions: ['fuss', 'huefte-beine', 'rumpf', 'bws-ruecken', 'schulter-nacken', 'arme-hand'],
+    goal: 'Löst Hauptengpässe von Fuß bis Nacken und verankert eine aufrechte Haltung.',
     exerciseIds: [
       'tfl-release',
       'piriformis-release',
       'pec-minor-release',
+      'adduktor-release-ellenbogen',
+      'subscapularis-release',
       'fuss-cycle',
       'couch-stretch',
       'bws-streckung-boden',
+      'cat-camel-lws',
       'ueberkopf-durchstrecken',
+      'nacken-stretches-3-richtungen',
       'luftberge-welle',
+      'mcgill-bird-dog',
       'scapula-pushups'
     ]
   },
   {
     id: 'buero-ruecken',
     title: 'Schreibtisch- & Nacken-Reset',
-    subtitle: '15 Min · BWS, Brust, Schulter & Nacken',
-    badge: 'Fokus',
-    accent: 'lavender',
-    durationLabel: '15 Min',
-    goal: 'Befreit verkürzte Brust- und Nackenmuskulatur und richtet die BWS auf.',
+    subtitle: 'BWS, Brust, Schulter & Nacken',
+    badge: 'Oberkörper & BWS',
+    accent: 'orchid',
+    regions: ['schulter-nacken', 'bws-ruecken', 'arme-hand'],
+    goal: 'Befreit verkürzte Brust- und Nackenmuskulatur und richtet die Brustwirbelsäule auf.',
     exerciseIds: [
       'pec-major-release',
       'oberer-trapez-release',
+      'subscapularis-release',
       'nacken-stretches-3-richtungen',
       'bws-streckung-wand',
       'katzenbuckel-zu-siegerpose',
+      'bws-drehung-lunge-squat',
+      'wrist-figure-8-side-turn',
       'kniender-frontsquat',
-      'scapula-spreizen'
+      'scapula-spreizen',
+      'scapula-pushups'
     ]
   },
   {
     id: 'huefte-beine-flow',
     title: 'Hüfte, Knie & Sprunggelenk',
-    subtitle: '20 Min · Unterkörper-Mobilität & PNF',
+    subtitle: 'Unterkörper-Mobilität & PNF',
     badge: 'Unterkörper',
-    accent: 'orchid',
-    durationLabel: '20 Min',
+    accent: 'lime',
+    regions: ['huefte-beine', 'fuss'],
     goal: 'Maximiert Hüftbeweglichkeit und Sprunggelenks-Dorsalextension.',
     exerciseIds: [
       'rectus-femoris-release',
       'glutaeus-medius-release',
       'waden-release-soleus',
+      'adduktor-release-ellenbogen',
+      'fuss-cycle',
       'sprunggelenk-mobilisation',
       'couch-stretch',
       'z-sitz-pnf',
       'hueftkapsel-distraktion',
+      'bear-sit',
       'wall-squat'
     ]
   },
   {
     id: 'schulter-ueberkopf',
     title: 'Schulter & Überkopf-Kraft',
-    subtitle: '18 Min · Kapsel, Skapula & Rotatoren',
-    badge: 'Oberkörper',
+    subtitle: 'Kapsel, Skapula & Rotatoren',
+    badge: 'Schulter',
     accent: 'lavender',
-    durationLabel: '18 Min',
+    regions: ['schulter-nacken', 'arme-hand', 'bws-ruecken'],
     goal: 'Ideal vor Krafttraining oder bei Schulterenge.',
     exerciseIds: [
       'latissimus-release',
       'subscapularis-release',
+      'pec-minor-release',
       'sleeper-stretch-pnf',
       'prayer-stretch',
       'dreifacher-bully-tuerrahmen',
+      'anterior-schulterkapsel',
       'externe-rotation-band',
+      'scapula-pullup',
+      'scapula-pushups',
       'kettlebell-bottom-up'
-    ]
-  },
-  {
-    id: 'unterwegs-ohne-geraete',
-    title: 'Unterwegs / Hotel-Routine',
-    subtitle: '12 Min · 100 % ohne Geräte',
-    badge: 'Reise-tauglich',
-    accent: 'lime',
-    durationLabel: '12 Min',
-    goal: 'Funktioniert überall – im Hotelzimmer, Campervan oder zwischen zwei Schichten.',
-    exerciseIds: [
-      'adduktor-release-ellenbogen',
-      'fuss-cycle',
-      'z-sitz-pnf',
-      'bws-drehung-lunge-squat',
-      'nacken-stretches-3-richtungen',
-      'bracing-atmung',
-      'l-aktivierung'
     ]
   },
   {
     id: 'core-haltung',
     title: 'Rumpf- & Haltungs-Fundament',
-    subtitle: '14 Min · TVA, Bracing & Wand-Kontrolle',
+    subtitle: 'TVA, Bracing & Wand-Kontrolle',
     badge: 'Haltung',
     accent: 'orchid',
-    durationLabel: '14 Min',
+    regions: ['rumpf', 'bws-ruecken'],
     goal: 'Trainiert die tiefe Rumpfspannung für schmerzfreie LWS und aufrechten Stand.',
     exerciseIds: [
       'bauch-release-2-baelle',
       'seitlicher-bauch-release',
+      'adduktor-release-ellenbogen',
       'seitliche-oeffnung-bogen',
+      'cat-camel-lws',
       'luftberge-welle',
+      'bracing-atmung',
       'ruecken-stabilisierung-bauchatmung',
       'ruecken-stabilisierung-hueftbeugung',
+      'mcgill-bird-dog',
+      'mcgill-side-plank',
       'progressive-plank'
     ]
   }

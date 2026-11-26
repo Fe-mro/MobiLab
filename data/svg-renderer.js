@@ -435,6 +435,27 @@ const POSE_SHAPES = {
     <path d="M120 45 L120 92 L108 122 M120 92 L132 122" fill="none" stroke="${C_BODY}" stroke-width="4.5" stroke-linecap="round"/>
     <path d="M134 54 L142 26" fill="none" stroke="${acc}" stroke-width="3.5" stroke-linecap="round"/>
     <path d="M134 12 L150 12 L146 22 L138 22 Z" fill="${acc}"/>
+  `,
+  'quadruped-cat-camel': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="72" cy="64" r="10" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M82 66 Q114 40 146 66 L146 112 L170 112" fill="none" stroke="${acc}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M86 68 L86 112" fill="none" stroke="${C_BODY}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M104 42 L114 32 L124 42" fill="none" stroke="${acc}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `,
+  'quadruped-bird-dog': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="80" cy="54" r="10" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M90 60 L146 64 L146 112 L170 112" fill="none" stroke="${C_BODY}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M92 62 L92 112" fill="none" stroke="${C_BODY}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M90 58 L46 56 M146 64 L196 64" fill="none" stroke="${acc}" stroke-width="4" stroke-linecap="round"/>
+  `,
+  'side-plank-mcgill': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="62" cy="58" r="10.5" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M72 64 L194 110" fill="none" stroke="${acc}" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M76 66 L66 112 L88 112" fill="none" stroke="${C_BODY}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M84 68 L98 54" fill="none" stroke="${C_BODY}" stroke-width="3" stroke-linecap="round"/>
   `
 };
 

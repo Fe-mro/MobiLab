@@ -29,27 +29,20 @@
         </div>
       </div>
       <div class="header-actions">
-        <button id="btn-install-header" class="icon-pill hidden" type="button" title="Als App installieren">
-          <span>+ App</span>
-        </button>
         <span id="offline-badge" class="status-dot" title="Offline bereit"></span>
       </div>
     </header>
 
-    <!-- Dezentes Installations-Banner -->
-    <div id="install-banner" class="install-banner hidden" role="region" aria-label="App installieren">
-      <div class="install-banner-text">
-        <strong>Als Handy-App installieren</strong>
-        <span>Für Vollbild, Offline-Zugriff &amp; Icon auf dem Homescreen.</span>
-      </div>
-      <div class="install-banner-actions">
-        <button id="btn-install-banner" class="btn-mini-lime" type="button">Anleitung</button>
-        <button id="btn-dismiss-banner" class="btn-mini-ghost" type="button" aria-label="Schließen">✕</button>
-      </div>
-    </div>
-
     <!-- Main View Container -->
     <main id="main-content" class="main-content" aria-live="polite"></main>
+
+    <!-- Floating Install Button -->
+    <button id="fab-install" class="fab-install hidden" type="button" aria-label="App installieren">
+      <span>📲 App installieren</span>
+    </button>
+
+    <!-- Kurzer Toast-Hinweis -->
+    <div id="app-toast" class="app-toast hidden" role="status" aria-live="polite"></div>
 
     <!-- Schwebendes weißes 4-Tab-Dock (inspiriert vom Screenshot) -->
     <nav class="bottom-dock" aria-label="Hauptnavigation">
@@ -102,9 +95,13 @@
 
     <div id="player-stage" class="player-stage"></div>
 
-    <!-- Weißes Timer-Control-Sheet (wie im Screenshot rechts) -->
+    <!-- Weißes Timer-Control-Sheet -->
     <div class="player-sheet">
       <div class="sheet-pill"></div>
+      <div id="player-side-pills" class="side-pills"></div>
+      <div class="player-step-bar">
+        <div id="player-step-fill" class="player-step-fill"></div>
+      </div>
       <div id="player-phase-cue" class="player-phase-cue hidden"></div>
       <div id="player-subbar" class="player-subbar hidden">
         <div id="player-subbar-fill" class="player-subbar-fill"></div>

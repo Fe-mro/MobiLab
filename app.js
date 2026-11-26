@@ -13,13 +13,27 @@ import {
   renderBodyMapInteractiveSVG
 } from './data/svg-renderer.js';
 
-const STORAGE_KEY = 'mobilab_state_v1';
+const STORAGE_KEY = 'mobilab_state_v2';
 const SWITCH_PAUSE_SEC = 10;
 const TRANSITION_PAUSE_SEC = 8;
 
+const EQUIPMENT_OPTIONS = [
+  { id: 'ball', label: 'Faszienball' },
+  { id: 'roller', label: 'Foam Roller' },
+  { id: 'peanut', label: 'Peanut' },
+  { id: 'band', label: 'Band' },
+  { id: 'stab', label: 'Stab / Besenstil' },
+  { id: 'kiste', label: 'Stuhl / Kiste' },
+  { id: 'gewicht', label: 'Gewicht / Flasche' },
+  { id: 'stange', label: 'Stange / Türrahmen' }
+];
+const ALL_EQUIP_IDS = EQUIPMENT_OPTIONS.map((o) => o.id);
+const ALWAYS_AVAILABLE_EQUIP = new Set(['none', 'wand', 'tuerrahmen']);
+
 const DEFAULT_STATE = {
   activeTab: 'home',
-  equipmentFilter: 'all',
+  availableEquipment: [...ALL_EQUIP_IDS],
+  homeTargetMinutes: 20,
   libSearch: '',
   libPhase: 'all',
   libRegion: 'all',
@@ -30,18 +44,21 @@ const DEFAULT_STATE = {
     equipMode: 'all',
     targetMinutes: 20
   },
-  builderQueue: ['tfl-release', 'couch-stretch', 'bws-streckung-boden', 'luftberge-welle', 'scapula-pushups'],
+  builderQueue: ['ql-release', 'piriformis-release', 'cat-camel-lws', 'couch-stretch', 'mcgill-bird-dog'],
   customDurations: {},
   customRoutines: [],
   bodymapChecked: [],
   bodymapActive: 1,
-  history: [], // { dateISO, title, minutes, count }
-  bannerDismissed: false,
+  history: [],
   muted: false
 };
 
 let state = loadState();
 let deferredInstallPrompt = null;
+
+// Modulweite Timer-Steuerung (verhindert parallele Zombie-Intervals!)
+let tickerInterval = null;
+let stepEndTimeMs = 0;
 
 // ==================== PERSISTENCE ====================
 function loadState() {
@@ -66,7 +83,7 @@ function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // Ignorieren falls Speicher voll
+    // Speicherlimit ignorieren
   }
 }
 
@@ -77,6 +94,11 @@ function getExerciseById(id) {
 
 function getExDuration(ex) {
   return state.customDurations[ex.id] || ex.defaultSeconds;
+}
+
+function getExerciseCostSec(ex) {
+  const dur = getExDuration(ex);
+  return (ex.bilateral ? dur * 2 + SWITCH_PAUSE_SEC : dur) + TRANSITION_PAUSE_SEC;
 }
 
 function formatTime(sec) {
@@ -98,32 +120,63 @@ function estimateTotalSeconds(exerciseIds) {
   return total;
 }
 
-function getWeekStreakAndCount() {
-  const now = new Date();
-  const oneDay = 86400000;
-  const sevenDaysAgo = now.getTime() - 7 * oneDay;
-  const weekSessions = state.history.filter((h) => new Date(h.dateISO).getTime() >= sevenDaysAgo);
-  const daysSet = new Set(state.history.map((h) => h.dateISO.slice(0, 10)));
-  let streak = 0;
-  let cursor = new Date(now.toISOString().slice(0, 10));
-  while (daysSet.has(cursor.toISOString().slice(0, 10))) {
-    streak++;
-    cursor = new Date(cursor.getTime() - oneDay);
+function isExerciseAllowedByEquipment(ex, availList) {
+  if (!availList || availList.length === 0) {
+    return ex.travelFriendly && ex.equipment.every((eq) => ALWAYS_AVAILABLE_EQUIP.has(eq));
   }
-  return {
-    total: state.history.length,
-    weekCount: weekSessions.length,
-    streak
-  };
+  const availSet = new Set([...ALWAYS_AVAILABLE_EQUIP, ...availList]);
+  return ex.equipment.every((eq) => availSet.has(eq));
 }
 
-function matchesEquipmentFilter(ex, filter) {
-  if (filter === 'all') return true;
-  if (filter === 'travel') return ex.travelFriendly;
-  if (filter === 'ball') return ex.equipment.includes('ball') || ex.equipment.includes('none');
-  if (filter === 'roller') return ex.equipment.includes('roller') || ex.equipment.includes('peanut') || ex.equipment.includes('none');
-  if (filter === 'band') return ex.equipment.includes('band') || ex.equipment.includes('stab') || ex.equipment.includes('stange');
-  return true;
+function buildAdaptiveRoutineExercises(routine) {
+  const avail = state.availableEquipment;
+  const budgetSec = (state.homeTargetMinutes || 20) * 60;
+  const regions = routine.regions && routine.regions.length ? routine.regions : Object.keys(REGIONS);
+
+  // 1. Priorisierte Übungen der Routine filtern
+  const preferred = (routine.exerciseIds || [])
+    .map(getExerciseById)
+    .filter((ex) => ex && isExerciseAllowedByEquipment(ex, avail));
+
+  // 2. Fallback-Pool aus allen Übungen derselben Regionen (falls viel Zeit oder wenig Equipment gewählt)
+  const preferredIds = new Set(preferred.map((e) => e.id));
+  const extraPool = EXERCISES.filter(
+    (ex) => !preferredIds.has(ex.id) && regions.includes(ex.region) && isExerciseAllowedByEquipment(ex, avail)
+  );
+  const fullPool = [...preferred, ...extraPool];
+
+  // Nach Phasen gruppieren (Release -> Mobilisation -> Aktivierung)
+  const byPhase = {
+    1: fullPool.filter((e) => e.phase === 1),
+    2: fullPool.filter((e) => e.phase === 2),
+    3: fullPool.filter((e) => e.phase === 3)
+  };
+
+  const selected = [];
+  const selectedIds = new Set();
+  let usedSec = 0;
+
+  // Ausgewogen durch Phasen 1 -> 2 -> 3 rotieren bis Zeitbudget erreicht
+  let added = true;
+  while (added && usedSec < budgetSec) {
+    added = false;
+    for (const p of [1, 2, 3]) {
+      const candidate = byPhase[p].find((e) => !selectedIds.has(e.id));
+      if (!candidate) continue;
+      const cost = getExerciseCostSec(candidate);
+      if (usedSec + cost <= budgetSec + 35 || selected.length < 3) {
+        selected.push(candidate);
+        selectedIds.add(candidate.id);
+        usedSec += cost;
+        added = true;
+      }
+      if (usedSec >= budgetSec) break;
+    }
+  }
+
+  // Strikt wissenschaftlich sortieren: Phase 1 -> 2 -> 3
+  selected.sort((a, b) => a.phase - b.phase);
+  return selected.map((e) => e.id);
 }
 
 function escapeHtml(str) {
@@ -139,6 +192,17 @@ function renderVisualHtml(ex) {
     return `<img src="${escapeHtml(ex.image)}" alt="${escapeHtml(ex.name)}" class="pose-img" style="width:100%;border-radius:16px;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" /><div style="display:none;">${renderPoseSVG(ex.svgPose, ex.phase)}</div>`;
   }
   return renderPoseSVG(ex.svgPose, ex.phase);
+}
+
+function showToast(msg) {
+  const toastEl = document.getElementById('app-toast');
+  if (!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.remove('hidden');
+  clearTimeout(showToast._tid);
+  showToast._tid = setTimeout(() => {
+    toastEl.classList.add('hidden');
+  }, 4000);
 }
 
 // ==================== WEB AUDIO & WAKE LOCK ====================
@@ -185,7 +249,7 @@ async function requestWakeLock() {
       });
     }
   } catch {
-    // Nicht auf jedem Browser unterstützt
+    // Nicht auf jedem Gerät unterstützt
   }
 }
 
@@ -222,79 +286,55 @@ function render() {
   else if (state.activeTab === 'posture') renderPosture();
 }
 
-// ---------- TAB 1: HOME ----------
+// ---------- TAB 1: HOME (EQUIPMENT + ZEIT -> ADAPTIVE ROUTINEN) ----------
 function renderHome() {
-  const stats = getWeekStreakAndCount();
-  const heroRoutine = ROUTINES[0];
-  const heroMins = Math.round(estimateTotalSeconds(heroRoutine.exerciseIds) / 60);
+  const noGearMode = state.availableEquipment.length === 0;
+  const allGearMode = state.availableEquipment.length === ALL_EQUIP_IDS.length;
 
-  const equipPills = [
-    { id: 'all', label: 'Alle Geräte' },
-    { id: 'travel', label: 'Ohne Geräte / Unterwegs' },
-    { id: 'ball', label: 'Ball' },
-    { id: 'roller', label: 'Rolle / Peanut' },
-    { id: 'band', label: 'Band / Stab' }
+  const customAdaptive = state.customRoutines.map((cr) => ({
+    ...cr,
+    badge: 'Eigene Routine',
+    accent: 'lavender',
+    isCustom: true,
+    adaptiveIds: cr.exerciseIds
+  }));
+
+  const routinesWithPlan = [
+    ...ROUTINES.map((r) => ({
+      ...r,
+      adaptiveIds: buildAdaptiveRoutineExercises(r)
+    })),
+    ...customAdaptive
   ];
-
-  const allRoutines = [
-    ...ROUTINES,
-    ...state.customRoutines.map((cr) => ({
-      ...cr,
-      badge: 'Eigene Routine',
-      accent: 'lavender',
-      isCustom: true
-    }))
-  ];
-
-  const filteredRoutines = allRoutines.filter((r) => {
-    if (state.equipmentFilter === 'all') return true;
-    return r.exerciseIds.some((id) => {
-      const ex = getExerciseById(id);
-      return ex && matchesEquipmentFilter(ex, state.equipmentFilter);
-    });
-  });
 
   mainEl.innerHTML = `
-    <div class="bento-card accent-lime">
-      <span class="card-badge">Empfohlene Session · 4 Phasen</span>
-      <h1 class="card-title">${escapeHtml(heroRoutine.title)}</h1>
-      <p class="card-sub">${escapeHtml(heroRoutine.goal)}</p>
-      <div class="card-footer">
-        <span style="font-weight:700;font-size:0.86rem;">~${heroMins} Min · ${heroRoutine.exerciseIds.length} Übungen</span>
-        <button class="btn-dark-pill" data-start-routine="${heroRoutine.id}">▶ Jetzt starten</button>
+    <div class="home-setup-card">
+      <span class="setup-label">1. Welches Equipment hast du heute?</span>
+      <div class="filter-wrap">
+        <button class="select-chip ${noGearMode ? 'active' : ''}" id="btn-home-nogear">✈ Ohne Geräte</button>
+        <button class="select-chip ${allGearMode ? 'active-lav' : ''}" id="btn-home-allgear">Alles verfügbar</button>
+        ${EQUIPMENT_OPTIONS.map((eq) => {
+          const active = state.availableEquipment.includes(eq.id);
+          return `<button class="select-chip ${active ? 'active' : ''}" data-home-equip="${eq.id}">${eq.label}</button>`;
+        }).join('')}
       </div>
-    </div>
 
-    <div class="bento-grid-2">
-      <div class="bento-card accent-lavender">
-        <span class="stat-label">Wochen-Aktivität</span>
-        <div class="stat-value">${stats.weekCount}×</div>
-        <span class="stat-label">Sessions (7 Tage)</span>
-      </div>
-      <div class="bento-card accent-orchid">
-        <span class="stat-label">Streak &amp; Gesamt</span>
-        <div class="stat-value">${stats.streak}d</div>
-        <span class="stat-label">${stats.total} Sessions gesamt</span>
+      <span class="setup-label" style="margin-top:6px;">2. Wie viel Zeit möchtest du investieren?</span>
+      <div class="filter-wrap" style="margin-bottom:0;">
+        ${[10, 15, 20, 30, 45].map((m) => `
+          <button class="select-chip ${state.homeTargetMinutes === m ? 'active-lav' : ''}" data-home-min="${m}">${m} Min</button>
+        `).join('')}
       </div>
     </div>
 
     <div class="section-head">
-      <h2 class="section-title">Dein Equipment heute</h2>
-      <span class="section-meta">${EXERCISES.length} Übungen</span>
-    </div>
-    <div class="pill-row">
-      ${equipPills.map((p) => `
-        <button class="filter-pill ${state.equipmentFilter === p.id ? 'active' : ''}" data-equip="${p.id}">${p.label}</button>
-      `).join('')}
+      <h2 class="section-title">Deine angepassten Routinen</h2>
+      <span class="section-meta">${noGearMode ? 'Ohne Geräte' : `${state.availableEquipment.length} Geräte`} · ~${state.homeTargetMinutes} Min</span>
     </div>
 
-    <div class="section-head">
-      <h2 class="section-title">Fokus-Routinen</h2>
-      <span class="section-meta">${filteredRoutines.length} Pläne</span>
-    </div>
-
-    ${filteredRoutines.map((r) => {
-      const mins = Math.round(estimateTotalSeconds(r.exerciseIds) / 60);
+    ${routinesWithPlan.map((r) => {
+      const ids = r.adaptiveIds;
+      const mins = Math.max(1, Math.round(estimateTotalSeconds(ids) / 60));
       const accentClass = r.accent ? `accent-${r.accent}` : '';
       return `
         <div class="bento-card ${accentClass}">
@@ -302,11 +342,11 @@ function renderHome() {
           <h3 class="card-title">${escapeHtml(r.title)}</h3>
           <p class="card-sub">${escapeHtml(r.goal || r.subtitle || '')}</p>
           <div class="card-footer">
-            <span style="font-weight:700;font-size:0.82rem;">~${mins} Min · ${r.exerciseIds.length} Übungen</span>
+            <span style="font-weight:700;font-size:0.82rem;">~${mins} Min · ${ids.length} Übungen</span>
             <div style="display:flex;gap:6px;">
               ${r.isCustom ? `<button class="btn-surface-pill" data-delete-custom="${r.id}" style="padding:8px 12px;">🗑</button>` : ''}
-              <button class="btn-dark-pill" data-load-builder="${r.id}">Anpassen</button>
-              <button class="btn-dark-pill" data-start-routine="${r.id}">▶</button>
+              <button class="btn-dark-pill" data-load-adaptive="${r.id}">Anpassen</button>
+              <button class="btn-dark-pill" data-start-adaptive="${r.id}">▶ Start</button>
             </div>
           </div>
         </div>
@@ -422,7 +462,6 @@ function generateSmartQueue() {
   const selected = [];
   let usedSec = 0;
 
-  // Gleichmäßig über Phasen (1 -> 2 -> 3) und gewählte Regionen verteilen
   const byPhase = {
     1: pool.filter((e) => e.phase === 1),
     2: pool.filter((e) => e.phase === 2),
@@ -436,14 +475,12 @@ function generateSmartQueue() {
     for (const p of activePhases) {
       const list = byPhase[p];
       if (!list || list.length === 0) continue;
-      // Region rotieren für ausgewogenen Mix
       const targetReg = activeRegions[(round + p) % activeRegions.length];
       let candidate = list.find((e) => e.region === targetReg && !selected.includes(e.id));
       if (!candidate) candidate = list.find((e) => !selected.includes(e.id));
       if (!candidate) continue;
 
-      const dur = getExDuration(candidate);
-      const cost = (candidate.bilateral ? dur * 2 + SWITCH_PAUSE_SEC : dur) + TRANSITION_PAUSE_SEC;
+      const cost = getExerciseCostSec(candidate);
       if (usedSec + cost <= budgetSec + 45 || selected.length < 3) {
         selected.push(candidate.id);
         usedSec += cost;
@@ -453,14 +490,13 @@ function generateSmartQueue() {
     round++;
   }
 
-  // Wissenschaftliche Sortierung: Phase 1 -> 2 -> 3
   selected.sort((a, b) => getExerciseById(a).phase - getExerciseById(b).phase);
   state.builderQueue = selected;
   saveState();
   renderBuilder();
 }
 
-// ---------- TAB 3: ÜBUNGS-BIBLIOTHEK ----------
+// ---------- TAB 3: ÜBUNGS-BIBLIOTHEK (WRAPPING-FILTER OHNE SCROLLEN) ----------
 function renderLibrary() {
   const q = state.libSearch.trim().toLowerCase();
   const filtered = EXERCISES.filter((ex) => {
@@ -474,18 +510,24 @@ function renderLibrary() {
     return true;
   });
 
+  const travelCount = EXERCISES.filter((e) => e.travelFriendly).length;
+
   mainEl.innerHTML = `
     <input id="lib-search-input" type="search" class="search-input" placeholder="Übung, Muskel oder Gerät suchen…" value="${escapeHtml(state.libSearch)}" />
 
-    <div class="pill-row">
+    <button id="btn-lib-travel" class="travel-toggle-btn ${state.libTravelOnly ? 'active' : ''}" type="button">
+      <span>✈ Nur Übungen ohne Geräte</span>
+      <span>${state.libTravelOnly ? 'Aktiv ✓' : `${travelCount} Übungen`}</span>
+    </button>
+
+    <div class="filter-wrap">
       <button class="filter-pill ${state.libPhase === 'all' ? 'active' : ''}" data-lib-phase="all">Alle Phasen</button>
       <button class="filter-pill ${state.libPhase === '1' ? 'active' : ''}" data-lib-phase="1">1 · Release</button>
       <button class="filter-pill ${state.libPhase === '2' ? 'active' : ''}" data-lib-phase="2">2 · Mobilisation</button>
       <button class="filter-pill ${state.libPhase === '3' ? 'active' : ''}" data-lib-phase="3">3 · Aktivierung</button>
-      <button class="filter-pill ${state.libTravelOnly ? 'active' : ''}" id="btn-lib-travel">Ohne Geräte</button>
     </div>
 
-    <div class="pill-row">
+    <div class="filter-wrap">
       <button class="filter-pill ${state.libRegion === 'all' ? 'active' : ''}" data-lib-region="all">Alle Regionen</button>
       ${Object.entries(REGIONS).map(([k, lbl]) => `
         <button class="filter-pill ${state.libRegion === k ? 'active' : ''}" data-lib-region="${k}">${lbl}</button>
@@ -509,7 +551,7 @@ function renderLibrary() {
               <span>${PHASES[ex.phase].short}</span>
               <span>·</span>
               <span>${formatTime(dur)}${ex.bilateral ? '/Seite' : ''}</span>
-              ${ex.travelFriendly ? '<span>· ✈ Unterwegs</span>' : ''}
+              ${ex.travelFriendly ? '<span>· ✈ Ohne Geräte</span>' : ''}
             </div>
           </div>
           <span style="color:var(--text-secondary);font-size:1.1rem;">›</span>
@@ -532,7 +574,7 @@ function renderLibrary() {
   });
 }
 
-// ---------- TAB 4: HALTUNG (BODYMAP), WISSENSCHAFT & APP-INSTALLATION ----------
+// ---------- TAB 4: HALTUNG (BODYMAP) & WISSENSCHAFT ----------
 function renderPosture() {
   const activePt = BODYMAP_POINTS.find((p) => p.id === state.bodymapActive) || BODYMAP_POINTS[0];
 
@@ -577,30 +619,6 @@ function renderPosture() {
         <p style="margin:5px 0 0;font-size:0.83rem;color:var(--text-secondary);">${escapeHtml(pr.text)}</p>
       </div>
     `).join('')}
-
-    <div class="section-head">
-      <h2 class="section-title">Als Handy-App installieren (PWA)</h2>
-    </div>
-    <div class="bento-card accent-orchid">
-      <span class="card-badge">Homescreen &amp; Offline</span>
-      <h3 class="card-title">So wird MobiLab zur echten App</h3>
-      <p class="card-sub" style="margin-bottom:10px;">Einmal installiert, startet MobiLab im Vollbild ohne Browser-Leiste und funktioniert auch im Flugmodus.</p>
-      ${deferredInstallPrompt ? `<button id="btn-install-now" class="btn-dark-pill" style="margin-bottom:12px;">📲 Jetzt direkt installieren</button>` : ''}
-      <div style="font-size:0.82rem;line-height:1.5;">
-        <strong>Android (Chrome / Google Pixel):</strong>
-        <ol style="margin:4px 0 10px;padding-left:18px;">
-          <li>Oben rechts auf das <strong>⋮ Menü</strong> tippen.</li>
-          <li><strong>„App installieren“</strong> bzw. <strong>„Zum Startbildschirm hinzufügen“</strong> wählen.</li>
-          <li>Mit <strong>„Installieren“</strong> bestätigen.</li>
-        </ol>
-        <strong>iPhone (Safari):</strong>
-        <ol style="margin:4px 0 0;padding-left:18px;">
-          <li>Unten auf das <strong>Teilen-Symbol</strong> (Quadrat mit Pfeil nach oben) tippen.</li>
-          <li>Nach unten scrollen und <strong>„Zum Home-Bildschirm“</strong> wählen.</li>
-          <li>Oben rechts auf <strong>„Hinzufügen“</strong> tippen.</li>
-        </ol>
-      </div>
-    </div>
 
     <div class="section-head">
       <h2 class="section-title">Wissenschaftliche Quellen</h2>
@@ -713,18 +731,23 @@ modalEl.addEventListener('click', (e) => {
   if (e.target === modalEl) modalEl.classList.add('hidden');
 });
 
-// ==================== HANDS-FREE WORKOUT PLAYER ====================
+// ==================== HANDS-FREE WORKOUT PLAYER (ECHTZEIT-TIMER) ====================
 const playerEl = document.getElementById('workout-player');
 let playerState = {
   active: false,
   paused: false,
   title: '',
-  steps: [], // { type: 'work'|'switch'|'transition', ex, sideLabel, duration, exerciseIndex, totalExercises }
+  steps: [],
   stepIndex: 0,
-  remaining: 0,
-  elapsedInStep: 0,
-  intervalId: null
+  remaining: 0
 };
+
+function stopTicker() {
+  if (tickerInterval !== null) {
+    clearInterval(tickerInterval);
+    tickerInterval = null;
+  }
+}
 
 function buildPlayerSteps(exerciseIds) {
   const valid = exerciseIds.map(getExerciseById).filter(Boolean);
@@ -734,34 +757,42 @@ function buildPlayerSteps(exerciseIds) {
     if (ex.bilateral) {
       steps.push({
         type: 'work',
+        sideTag: 'left',
         ex,
         sideLabel: 'Links',
         duration: dur,
+        baseDuration: dur,
         exerciseIndex: idx,
         totalExercises: valid.length
       });
       steps.push({
         type: 'switch',
+        sideTag: 'switch',
         ex,
         sideLabel: 'Seitenwechsel → Rechts',
         duration: SWITCH_PAUSE_SEC,
+        baseDuration: SWITCH_PAUSE_SEC,
         exerciseIndex: idx,
         totalExercises: valid.length
       });
       steps.push({
         type: 'work',
+        sideTag: 'right',
         ex,
         sideLabel: 'Rechts',
         duration: dur,
+        baseDuration: dur,
         exerciseIndex: idx,
         totalExercises: valid.length
       });
     } else {
       steps.push({
         type: 'work',
+        sideTag: 'both',
         ex,
         sideLabel: 'Beidseitig',
         duration: dur,
+        baseDuration: dur,
         exerciseIndex: idx,
         totalExercises: valid.length
       });
@@ -769,9 +800,11 @@ function buildPlayerSteps(exerciseIds) {
     if (idx < valid.length - 1) {
       steps.push({
         type: 'transition',
+        sideTag: 'transition',
         ex: valid[idx + 1],
         sideLabel: 'Nächste Übung',
         duration: TRANSITION_PAUSE_SEC,
+        baseDuration: TRANSITION_PAUSE_SEC,
         exerciseIndex: idx + 1,
         totalExercises: valid.length
       });
@@ -781,6 +814,7 @@ function buildPlayerSteps(exerciseIds) {
 }
 
 function startWorkout(exerciseIds, title = 'Training') {
+  stopTicker();
   const steps = buildPlayerSteps(exerciseIds);
   if (!steps.length) return;
   ensureAudio();
@@ -792,11 +826,10 @@ function startWorkout(exerciseIds, title = 'Training') {
     title,
     steps,
     stepIndex: 0,
-    remaining: steps[0].duration,
-    elapsedInStep: 0,
-    intervalId: null
+    remaining: steps[0].duration
   };
 
+  stepEndTimeMs = Date.now() + playerState.remaining * 1000;
   playerEl.classList.remove('hidden');
   playTone(528, 0.35);
   renderPlayer();
@@ -804,39 +837,69 @@ function startWorkout(exerciseIds, title = 'Training') {
 }
 
 function startTicker() {
-  clearInterval(playerState.intervalId);
-  playerState.intervalId = setInterval(() => {
+  stopTicker();
+  stepEndTimeMs = Date.now() + playerState.remaining * 1000;
+  tickerInterval = setInterval(() => {
     if (!playerState.active || playerState.paused) return;
-    playerState.remaining -= 1;
-    playerState.elapsedInStep += 1;
+    const newRemaining = Math.max(0, Math.ceil((stepEndTimeMs - Date.now()) / 1000));
+    if (newRemaining === playerState.remaining) return;
 
-    if (playerState.remaining > 0 && playerState.remaining <= 3) {
+    playerState.remaining = newRemaining;
+    if (newRemaining > 0 && newRemaining <= 3) {
       playTone(440, 0.12, 0.08);
     }
 
-    if (playerState.remaining <= 0) {
+    if (newRemaining <= 0) {
       advanceStep();
     } else {
       updateTimerDisplay();
     }
-  }, 1000);
+  }, 250);
+}
+
+function goToStep(index) {
+  if (index < 0 || index >= playerState.steps.length) return;
+  playerState.stepIndex = index;
+  const step = playerState.steps[index];
+  step.duration = step.baseDuration;
+  playerState.remaining = step.duration;
+  stepEndTimeMs = Date.now() + playerState.remaining * 1000;
+  renderPlayer();
 }
 
 function advanceStep() {
   if (playerState.stepIndex < playerState.steps.length - 1) {
-    playerState.stepIndex += 1;
-    const step = playerState.steps[playerState.stepIndex];
-    playerState.remaining = step.duration;
-    playerState.elapsedInStep = 0;
-    playTone(step.type === 'work' ? 587 : 392, 0.4);
-    renderPlayer();
+    const nextIdx = playerState.stepIndex + 1;
+    const nextStep = playerState.steps[nextIdx];
+    playTone(nextStep.type === 'work' ? 587 : 392, 0.4);
+    goToStep(nextIdx);
   } else {
     finishWorkout();
   }
 }
 
+function jumpToAdjacentExercise(direction) {
+  const curExIdx = playerState.steps[playerState.stepIndex]?.exerciseIndex ?? 0;
+  const targetExIdx = curExIdx + direction;
+  if (direction > 0) {
+    const idx = playerState.steps.findIndex((s, i) => i > playerState.stepIndex && s.type === 'work' && s.exerciseIndex === targetExIdx);
+    if (idx !== -1) {
+      playTone(587, 0.25, 0.1);
+      goToStep(idx);
+    } else {
+      finishWorkout();
+    }
+  } else {
+    const idx = playerState.steps.findIndex((s) => s.type === 'work' && s.exerciseIndex === Math.max(0, targetExIdx));
+    if (idx !== -1) {
+      playTone(528, 0.25, 0.1);
+      goToStep(idx);
+    }
+  }
+}
+
 function finishWorkout() {
-  clearInterval(playerState.intervalId);
+  stopTicker();
   playerState.active = false;
   releaseWakeLock();
   playTone(660, 0.55);
@@ -858,6 +921,8 @@ function finishWorkout() {
       <button id="btn-finish-close" class="btn-dark-pill">Zurück zur App</button>
     </div>
   `;
+  document.getElementById('player-side-pills').innerHTML = '';
+  document.getElementById('player-step-fill').style.width = '100%';
   document.getElementById('player-phase-cue').classList.add('hidden');
   document.getElementById('player-subbar').classList.add('hidden');
   document.getElementById('player-time-display').textContent = '00:00';
@@ -867,7 +932,7 @@ function finishWorkout() {
   };
 }
 
-function getSubPhaseInfo(ex, elapsed, totalDur) {
+function getSubPhaseInfo(ex, elapsed) {
   if (!ex.timerPhases || ex.timerPhases.length === 0) return null;
   const cycleLen = ex.timerPhases.reduce((sum, p) => sum + p.seconds, 0);
   if (!cycleLen) return null;
@@ -898,12 +963,16 @@ function updateTimerDisplay() {
   }
   document.getElementById('player-total-left').textContent = formatTime(remTotal);
 
+  const elapsedInStep = Math.max(0, step.duration - playerState.remaining);
+  const stepPct = step.duration > 0 ? Math.min(100, (elapsedInStep / step.duration) * 100) : 0;
+  document.getElementById('player-step-fill').style.width = `${stepPct}%`;
+
   const cueEl = document.getElementById('player-phase-cue');
   const subBarEl = document.getElementById('player-subbar');
   const subFillEl = document.getElementById('player-subbar-fill');
 
   if (step.type === 'work' && step.ex.timerPhases) {
-    const info = getSubPhaseInfo(step.ex, playerState.elapsedInStep, step.duration);
+    const info = getSubPhaseInfo(step.ex, elapsedInStep);
     if (info) {
       cueEl.classList.remove('hidden');
       subBarEl.classList.remove('hidden');
@@ -926,6 +995,27 @@ function updateTimerDisplay() {
   }
 }
 
+function renderSidePills(step) {
+  const container = document.getElementById('player-side-pills');
+  if (!step.ex.bilateral || step.type === 'transition') {
+    container.innerHTML = `<span class="side-pill active">${escapeHtml(step.sideLabel)}</span>`;
+    return;
+  }
+  const exIdx = step.exerciseIndex;
+  const leftIdx = playerState.steps.findIndex((s) => s.exerciseIndex === exIdx && s.sideTag === 'left');
+  const switchIdx = playerState.steps.findIndex((s) => s.exerciseIndex === exIdx && s.sideTag === 'switch');
+  const rightIdx = playerState.steps.findIndex((s) => s.exerciseIndex === exIdx && s.sideTag === 'right');
+
+  container.innerHTML = [
+    { label: 'Links', idx: leftIdx, active: step.sideTag === 'left' },
+    { label: 'Wechsel', idx: switchIdx, active: step.sideTag === 'switch' },
+    { label: 'Rechts', idx: rightIdx, active: step.sideTag === 'right' }
+  ]
+    .filter((p) => p.idx !== -1)
+    .map((p) => `<button class="side-pill ${p.active ? 'active' : ''}" data-jump-step="${p.idx}" type="button">${p.label}</button>`)
+    .join('');
+}
+
 function renderPlayer() {
   const step = playerState.steps[playerState.stepIndex];
   if (!step) return;
@@ -936,6 +1026,8 @@ function renderPlayer() {
   const pct = ((playerState.stepIndex + 1) / playerState.steps.length) * 100;
   document.getElementById('player-progress-fill').style.width = `${pct}%`;
   document.getElementById('player-side-label').textContent = step.sideLabel;
+
+  renderSidePills(step);
 
   document.getElementById('player-stage').innerHTML = `
     <span class="badge p${ex.phase}">${PHASES[ex.phase].short}</span>
@@ -959,8 +1051,15 @@ function renderPlayer() {
 }
 
 // Player Controls
+document.getElementById('player-side-pills').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-jump-step]');
+  if (btn) {
+    goToStep(Number(btn.dataset.jumpStep));
+  }
+});
+
 document.getElementById('player-close').onclick = () => {
-  clearInterval(playerState.intervalId);
+  stopTicker();
   playerState.active = false;
   releaseWakeLock();
   playerEl.classList.add('hidden');
@@ -975,32 +1074,37 @@ document.getElementById('player-mute').onclick = () => {
 document.getElementById('btn-play-pause').onclick = () => {
   ensureAudio();
   playerState.paused = !playerState.paused;
-  if (playerState.paused) releaseWakeLock();
-  else requestWakeLock();
+  if (playerState.paused) {
+    releaseWakeLock();
+  } else {
+    stepEndTimeMs = Date.now() + playerState.remaining * 1000;
+    requestWakeLock();
+  }
   updateTimerDisplay();
 };
 
 document.getElementById('btn-minus-15').onclick = () => {
+  const step = playerState.steps[playerState.stepIndex];
   playerState.remaining = Math.max(5, playerState.remaining - 15);
+  if (step) step.duration = Math.max(playerState.remaining, step.duration);
+  stepEndTimeMs = Date.now() + playerState.remaining * 1000;
   updateTimerDisplay();
 };
 
 document.getElementById('btn-plus-15').onclick = () => {
+  const step = playerState.steps[playerState.stepIndex];
   playerState.remaining += 15;
+  if (step && playerState.remaining > step.duration) step.duration = playerState.remaining;
+  stepEndTimeMs = Date.now() + playerState.remaining * 1000;
   updateTimerDisplay();
 };
 
 document.getElementById('btn-next-ex').onclick = () => {
-  advanceStep();
+  jumpToAdjacentExercise(1);
 };
 
 document.getElementById('btn-prev-ex').onclick = () => {
-  if (playerState.stepIndex > 0) {
-    playerState.stepIndex -= 1;
-    playerState.remaining = playerState.steps[playerState.stepIndex].duration;
-    playerState.elapsedInStep = 0;
-    renderPlayer();
-  }
+  jumpToAdjacentExercise(-1);
 };
 
 // ==================== GLOBAL EVENT DELEGATION ====================
@@ -1011,29 +1115,62 @@ document.querySelectorAll('.dock-btn').forEach((btn) => {
 mainEl.addEventListener('click', (e) => {
   const t = e.target;
 
-  const equipBtn = t.closest('[data-equip]');
-  if (equipBtn) {
-    state.equipmentFilter = equipBtn.dataset.equip;
+  // Startseite: Equipment & Zeit
+  if (t.closest('#btn-home-nogear')) {
+    state.availableEquipment = [];
+    saveState();
+    renderHome();
+    return;
+  }
+  if (t.closest('#btn-home-allgear')) {
+    state.availableEquipment = [...ALL_EQUIP_IDS];
+    saveState();
+    renderHome();
+    return;
+  }
+  const homeEquipBtn = t.closest('[data-home-equip]');
+  if (homeEquipBtn) {
+    const val = homeEquipBtn.dataset.homeEquip;
+    const arr = state.availableEquipment;
+    state.availableEquipment = arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
+    saveState();
+    renderHome();
+    return;
+  }
+  const homeMinBtn = t.closest('[data-home-min]');
+  if (homeMinBtn) {
+    state.homeTargetMinutes = Number(homeMinBtn.dataset.homeMin);
     saveState();
     renderHome();
     return;
   }
 
-  const startRoutineBtn = t.closest('[data-start-routine]');
-  if (startRoutineBtn) {
-    const rid = startRoutineBtn.dataset.startRoutine;
-    const r = ROUTINES.find((x) => x.id === rid) || state.customRoutines.find((x) => x.id === rid);
-    if (r) startWorkout(r.exerciseIds, r.title);
+  // Adaptive Routinen auf Startseite starten / anpassen
+  const startAdaptBtn = t.closest('[data-start-adaptive]');
+  if (startAdaptBtn) {
+    const rid = startAdaptBtn.dataset.startAdaptive;
+    const r = ROUTINES.find((x) => x.id === rid);
+    if (r) {
+      startWorkout(buildAdaptiveRoutineExercises(r), r.title);
+    } else {
+      const cr = state.customRoutines.find((x) => x.id === rid);
+      if (cr) startWorkout(cr.exerciseIds, cr.title);
+    }
     return;
   }
-
-  const loadBuilderBtn = t.closest('[data-load-builder]');
-  if (loadBuilderBtn) {
-    const rid = loadBuilderBtn.dataset.loadBuilder;
-    const r = ROUTINES.find((x) => x.id === rid) || state.customRoutines.find((x) => x.id === rid);
+  const loadAdaptBtn = t.closest('[data-load-adaptive]');
+  if (loadAdaptBtn) {
+    const rid = loadAdaptBtn.dataset.loadAdaptive;
+    const r = ROUTINES.find((x) => x.id === rid);
     if (r) {
-      state.builderQueue = [...r.exerciseIds];
+      state.builderQueue = buildAdaptiveRoutineExercises(r);
       setActiveTab('builder');
+    } else {
+      const cr = state.customRoutines.find((x) => x.id === rid);
+      if (cr) {
+        state.builderQueue = [...cr.exerciseIds];
+        setActiveTab('builder');
+      }
     }
     return;
   }
@@ -1057,7 +1194,6 @@ mainEl.addEventListener('click', (e) => {
     renderBuilder();
     return;
   }
-
   const bPhase = t.closest('[data-b-phase]');
   if (bPhase) {
     const val = Number(bPhase.dataset.bPhase);
@@ -1067,7 +1203,6 @@ mainEl.addEventListener('click', (e) => {
     renderBuilder();
     return;
   }
-
   const bEquip = t.closest('[data-b-equip]');
   if (bEquip) {
     state.builderConfig.equipMode = bEquip.dataset.bEquip;
@@ -1075,7 +1210,6 @@ mainEl.addEventListener('click', (e) => {
     renderBuilder();
     return;
   }
-
   const bMin = t.closest('[data-b-min]');
   if (bMin) {
     state.builderConfig.targetMinutes = Number(bMin.dataset.bMin);
@@ -1088,19 +1222,16 @@ mainEl.addEventListener('click', (e) => {
     generateSmartQueue();
     return;
   }
-
   if (t.closest('#btn-sort-science')) {
     state.builderQueue.sort((a, b) => getExerciseById(a).phase - getExerciseById(b).phase);
     saveState();
     renderBuilder();
     return;
   }
-
   if (t.closest('#btn-start-queue')) {
     startWorkout(state.builderQueue, 'Eigener Baukasten');
     return;
   }
-
   if (t.closest('#btn-save-custom')) {
     const name = prompt('Name für deine Routine:', 'Meine Session');
     if (name && name.trim()) {
@@ -1195,47 +1326,35 @@ mainEl.addEventListener('click', (e) => {
     renderPosture();
     return;
   }
-
-  if (t.closest('#btn-install-now') && deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    deferredInstallPrompt = null;
-  }
 });
 
-// ==================== PWA & INSTALL PROMPT ====================
+// ==================== FLOATING INSTALL BUTTON ====================
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-const bannerEl = document.getElementById('install-banner');
-const headerInstallBtn = document.getElementById('btn-install-header');
+const fabInstall = document.getElementById('fab-install');
 
-if (!isStandalone && !state.bannerDismissed) {
-  bannerEl.classList.remove('hidden');
+if (!isStandalone && fabInstall) {
+  fabInstall.classList.remove('hidden');
 }
-
-document.getElementById('btn-install-banner').onclick = () => {
-  setActiveTab('posture');
-};
-
-document.getElementById('btn-dismiss-banner').onclick = () => {
-  state.bannerDismissed = true;
-  saveState();
-  bannerEl.classList.add('hidden');
-};
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  headerInstallBtn.classList.remove('hidden');
+  fabInstall?.classList.remove('hidden');
 });
 
-headerInstallBtn.onclick = async () => {
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  fabInstall?.classList.add('hidden');
+});
+
+fabInstall?.addEventListener('click', async () => {
   if (deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
     deferredInstallPrompt = null;
-    headerInstallBtn.classList.add('hidden');
   } else {
-    setActiveTab('posture');
+    showToast('Im Browser-Menü „Zum Home-Bildschirm“ oder „App installieren“ wählen.');
   }
-};
+});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
