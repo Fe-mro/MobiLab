@@ -4,6 +4,8 @@ import {
   SCIENTIFIC_SOURCES,
   BODYMAP_POINTS,
   PRACTICE_PRINCIPLES,
+  PRACTICE_GUIDES,
+  GLOSSARY,
   EXERCISES,
   ROUTINES
 } from './data/exercises.js';
@@ -138,6 +140,22 @@ function buildAdaptiveRoutineExercises(routine) {
     .map(getExerciseById)
     .filter((ex) => ex && isExerciseAllowedByEquipment(ex, avail));
 
+  // Strikte klinische Routinen (z. B. Low Back Pain): ausschließlich aus dem evidenzbasierten Pool schöpfen
+  if (routine.strictPoolOnly) {
+    const selected = [];
+    let usedSec = 0;
+    for (const ex of preferred) {
+      const cost = getExerciseCostSec(ex);
+      if (usedSec + cost <= budgetSec + 35 || selected.length < 3) {
+        selected.push(ex);
+        usedSec += cost;
+      }
+      if (usedSec >= budgetSec) break;
+    }
+    selected.sort((a, b) => a.phase - b.phase);
+    return selected.map((e) => e.id);
+  }
+
   // 2. Fallback-Pool aus allen Übungen derselben Regionen (falls viel Zeit oder wenig Equipment gewählt)
   const preferredIds = new Set(preferred.map((e) => e.id));
   const extraPool = EXERCISES.filter(
@@ -266,18 +284,43 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// ==================== RENDERING ====================
+// ==================== RENDERING & NAVIGATION ====================
 const mainEl = document.getElementById('main-content');
+const backBtn = document.getElementById('btn-back');
+const infoBtn = document.getElementById('btn-info');
+const infoModalEl = document.getElementById('info-modal');
+const navHistory = [];
 
-function setActiveTab(tab) {
+function syncBackButton() {
+  if (!backBtn) return;
+  const showBack = state.activeTab !== 'home' || navHistory.length > 0;
+  backBtn.classList.toggle('hidden', !showBack);
+}
+
+function setActiveTab(tab, pushHistory = true) {
+  if (pushHistory && state.activeTab && state.activeTab !== tab) {
+    navHistory.push(state.activeTab);
+    if (navHistory.length > 15) navHistory.shift();
+  }
   state.activeTab = tab;
   saveState();
   document.querySelectorAll('.dock-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
   });
+  syncBackButton();
   render();
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
+
+backBtn?.addEventListener('click', () => {
+  const prev = navHistory.pop();
+  if (prev && prev !== state.activeTab) {
+    setActiveTab(prev, false);
+  } else {
+    navHistory.length = 0;
+    setActiveTab('home', false);
+  }
+});
 
 function render() {
   if (state.activeTab === 'home') renderHome();
@@ -574,7 +617,7 @@ function renderLibrary() {
   });
 }
 
-// ---------- TAB 4: HALTUNG (BODYMAP) & WISSENSCHAFT ----------
+// ---------- TAB 4: HALTUNG (6-PUNKTE-BODYMAP) ----------
 function renderPosture() {
   const activePt = BODYMAP_POINTS.find((p) => p.id === state.bodymapActive) || BODYMAP_POINTS[0];
 
@@ -610,29 +653,82 @@ function renderPosture() {
       </div>
     </div>
 
-    <div class="section-head">
-      <h2 class="section-title">7 Praxis-Prinzipien</h2>
-    </div>
-    ${PRACTICE_PRINCIPLES.map((pr, i) => `
-      <div class="bento-card" style="padding:14px 16px;">
-        <strong style="color:var(--lavender);font-size:0.88rem;">${i + 1}. ${escapeHtml(pr.title)}</strong>
-        <p style="margin:5px 0 0;font-size:0.83rem;color:var(--text-secondary);">${escapeHtml(pr.text)}</p>
-      </div>
-    `).join('')}
-
-    <div class="section-head">
-      <h2 class="section-title">Wissenschaftliche Quellen</h2>
-    </div>
-    ${SCIENTIFIC_SOURCES.map((src) => `
-      <div class="bento-card" style="padding:14px 16px;">
-        <div style="font-weight:700;font-size:0.86rem;margin-bottom:4px;">${escapeHtml(src.title)}</div>
-        <div style="font-size:0.76rem;color:var(--text-secondary);margin-bottom:6px;">${escapeHtml(src.authors)} · ${escapeHtml(src.journal)}</div>
-        <p style="margin:0 0 8px;font-size:0.82rem;">${escapeHtml(src.takeaway)}</p>
-        <a class="source-link" href="${src.url}" target="_blank" rel="noopener noreferrer">PubMed (PMID ${src.pmid}) ↗</a>
-      </div>
-    `).join('')}
+    <button id="btn-open-info-from-posture" class="btn-surface-pill btn-full" type="button">
+      ⓘ Tipps, 7 Prinzipien, Glossar &amp; Quellen öffnen
+    </button>
   `;
 }
+
+// ==================== INFO MODAL (AKKORDEON) ====================
+function openInfoModal() {
+  const bodyEl = document.getElementById('info-modal-body');
+  if (!bodyEl) return;
+
+  bodyEl.innerHTML = `
+    <details class="accordion" open>
+      <summary>Praxis-Tipps: Dehnen, Rollen &amp; Triggerpunkte</summary>
+      <div class="accordion-body">
+        ${PRACTICE_GUIDES.map((g) => `
+          <h4>${escapeHtml(g.title)}</h4>
+          <ul>${g.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+        `).join('')}
+      </div>
+    </details>
+
+    <details class="accordion">
+      <summary>Die 7 Trainings- &amp; Haltungsprinzipien</summary>
+      <div class="accordion-body">
+        ${PRACTICE_PRINCIPLES.map((pr, i) => `
+          <div class="glossary-item">
+            <strong>${i + 1}. ${escapeHtml(pr.title)}</strong>
+            <span>${escapeHtml(pr.text)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+
+    <details class="accordion">
+      <summary>Fachbegriffe &amp; Abkürzungen (Glossar A–Z)</summary>
+      <div class="accordion-body">
+        ${GLOSSARY.map((g) => `
+          <div class="glossary-item">
+            <strong>${escapeHtml(g.term)}</strong>
+            <span>${escapeHtml(g.desc)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+
+    <details class="accordion">
+      <summary>Wissenschaftliche Evidenz &amp; PubMed-Quellen</summary>
+      <div class="accordion-body">
+        <p style="margin:0 0 10px;">Alle Routinen trennen strikt zwischen Beweglichkeitstraining (Phase 1–2) und klinischer Schmerz-Evidenz: Für chronische Kreuzschmerzen (<em>Low Back Pain</em>) zeigen Netzwerk-Meta-Analysen die beste Wirksamkeit für Pilates, Motor-Control- &amp; Core-Stabilisation – nicht für isoliertes Dehnen.</p>
+        ${SCIENTIFIC_SOURCES.map((src) => `
+          <div class="glossary-item">
+            <strong>${escapeHtml(src.title)}</strong>
+            <div style="font-size:0.75rem;margin-bottom:4px;">${escapeHtml(src.authors)} · ${escapeHtml(src.journal)}</div>
+            <p style="margin:0 0 6px;color:var(--text-primary);">${escapeHtml(src.takeaway)}</p>
+            <a class="source-link" href="${src.url}" target="_blank" rel="noopener noreferrer">PubMed (PMID ${src.pmid}) ↗</a>
+          </div>
+        `).join('')}
+      </div>
+    </details>
+  `;
+
+  infoModalEl?.classList.remove('hidden');
+  syncFabVisibility();
+}
+
+function closeInfoModal() {
+  infoModalEl?.classList.add('hidden');
+  syncFabVisibility();
+}
+
+infoBtn?.addEventListener('click', openInfoModal);
+document.getElementById('info-modal-close')?.addEventListener('click', closeInfoModal);
+infoModalEl?.addEventListener('click', (e) => {
+  if (e.target === infoModalEl) closeInfoModal();
+});
 
 // ==================== DETAIL MODAL ====================
 const modalEl = document.getElementById('exercise-modal');
@@ -699,6 +795,7 @@ function openExerciseModal(id) {
   `;
 
   modalEl.classList.remove('hidden');
+  syncFabVisibility();
 
   document.getElementById('modal-dur-minus').onclick = () => {
     state.customDurations[ex.id] = Math.max(15, getExDuration(ex) - 15);
@@ -726,9 +823,15 @@ function openExerciseModal(id) {
   };
 }
 
-document.getElementById('modal-close').onclick = () => modalEl.classList.add('hidden');
+document.getElementById('modal-close').onclick = () => {
+  modalEl.classList.add('hidden');
+  syncFabVisibility();
+};
 modalEl.addEventListener('click', (e) => {
-  if (e.target === modalEl) modalEl.classList.add('hidden');
+  if (e.target === modalEl) {
+    modalEl.classList.add('hidden');
+    syncFabVisibility();
+  }
 });
 
 // ==================== HANDS-FREE WORKOUT PLAYER (ECHTZEIT-TIMER) ====================
@@ -831,6 +934,7 @@ function startWorkout(exerciseIds, title = 'Training') {
 
   stepEndTimeMs = Date.now() + playerState.remaining * 1000;
   playerEl.classList.remove('hidden');
+  syncFabVisibility();
   playTone(528, 0.35);
   renderPlayer();
   startTicker();
@@ -928,6 +1032,7 @@ function finishWorkout() {
   document.getElementById('player-time-display').textContent = '00:00';
   document.getElementById('btn-finish-close').onclick = () => {
     playerEl.classList.add('hidden');
+    syncFabVisibility();
     render();
   };
 }
@@ -1063,6 +1168,7 @@ document.getElementById('player-close').onclick = () => {
   playerState.active = false;
   releaseWakeLock();
   playerEl.classList.add('hidden');
+  syncFabVisibility();
 };
 
 document.getElementById('player-mute').onclick = () => {
@@ -1326,20 +1432,34 @@ mainEl.addEventListener('click', (e) => {
     renderPosture();
     return;
   }
+  if (t.closest('#btn-open-info-from-posture')) {
+    openInfoModal();
+    return;
+  }
 });
 
 // ==================== FLOATING INSTALL BUTTON ====================
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 const fabInstall = document.getElementById('fab-install');
 
-if (!isStandalone && fabInstall) {
-  fabInstall.classList.remove('hidden');
+function syncFabVisibility() {
+  if (!fabInstall || isStandalone) {
+    fabInstall?.classList.add('hidden');
+    return;
+  }
+  const anyOverlayOpen =
+    !modalEl?.classList.contains('hidden') ||
+    !infoModalEl?.classList.contains('hidden') ||
+    !playerEl?.classList.contains('hidden');
+  fabInstall.classList.toggle('hidden', anyOverlayOpen);
 }
+
+syncFabVisibility();
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  fabInstall?.classList.remove('hidden');
+  syncFabVisibility();
 });
 
 window.addEventListener('appinstalled', () => {
@@ -1363,4 +1483,4 @@ if ('serviceWorker' in navigator) {
 }
 
 // Initial Render
-setActiveTab(state.activeTab || 'home');
+setActiveTab(state.activeTab || 'home', false);

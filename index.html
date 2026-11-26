@@ -22,6 +22,7 @@
     <!-- Top Header -->
     <header class="app-header">
       <div class="brand">
+        <button id="btn-back" class="btn-back hidden" type="button" aria-label="Zurück">←</button>
         <img src="./icons/icon-192.png" alt="MobiLab Icon" class="brand-icon" />
         <div>
           <span class="brand-name">MobiLab</span>
@@ -29,6 +30,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button id="btn-info" class="btn-info-pill" type="button" aria-label="Info &amp; Glossar öffnen">ⓘ Info</button>
         <span id="offline-badge" class="status-dot" title="Offline bereit"></span>
       </div>
     </header>
@@ -70,20 +72,35 @@
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-head">
-        <div>
+        <button id="modal-close" class="btn-circle-dark" type="button" aria-label="Zurück">←</button>
+        <div style="flex:1;min-width:0;">
           <span id="modal-phase-badge" class="badge"></span>
           <h2 id="modal-title"></h2>
         </div>
-        <button id="modal-close" class="btn-circle-dark" type="button" aria-label="Schließen">✕</button>
       </div>
       <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Info, Praxis-Tipps, Glossar & Quellen Modal -->
+  <div id="info-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <button id="info-modal-close" class="btn-circle-dark" type="button" aria-label="Zurück">←</button>
+        <div style="flex:1;min-width:0;">
+          <span class="badge p2">Wissen &amp; Praxis</span>
+          <h2 id="info-modal-title">Hintergrund, Tipps &amp; Glossar</h2>
+        </div>
+      </div>
+      <div id="info-modal-body" class="modal-body"></div>
     </div>
   </div>
 
   <!-- Hands-Free Workout Player Overlay -->
   <div id="workout-player" class="player-overlay hidden" role="dialog" aria-modal="true" aria-label="Trainings-Player">
     <div class="player-top">
-      <button id="player-close" class="btn-circle-surface" type="button" aria-label="Training beenden">✕</button>
+      <button id="player-close" class="btn-circle-surface" type="button" aria-label="Zurück zum Training">←</button>
       <div class="player-progress-wrap">
         <span id="player-step-label">Übung 1 / 8</span>
         <div class="player-progress-bar">

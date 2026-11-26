@@ -32,7 +32,7 @@ export const REGIONS = {
   'fuss': 'Fuß & Sprunggelenk',
   'huefte-beine': 'Hüfte & Beine',
   'rumpf': 'Rumpf & Atmung',
-  'bws-ruecken': 'BWS & Rücken',
+  'bws-ruecken': 'BWS (Brustwirbelsäule) & Rücken',
   'schulter-nacken': 'Schulter & Nacken',
   'arme-hand': 'Arme & Handgelenk'
 };
@@ -45,7 +45,7 @@ export const SCIENTIFIC_SOURCES = [
     journal: 'Sports Medicine (2020)',
     pmid: '31628662',
     url: 'https://pubmed.ncbi.nlm.nih.gov/31628662/',
-    takeaway: 'Bereits 60–90 s myofaszialer Release pro Muskelgruppe steigern akut den Bewegungsumfang (SMD ≈ 0,74) – vergleichbar mit Dehnen, ohne die Kraftleistung zu mindern.'
+    takeaway: 'Bereits 60–90 s myofaszialer Release (SMR) pro Muskelgruppe steigern akut den Bewegungsumfang (ROM, SMD ≈ 0,74) – vergleichbar mit Dehnen, ohne die Kraftleistung zu mindern.'
   },
   {
     id: 'konrad-2022',
@@ -82,7 +82,101 @@ export const SCIENTIFIC_SOURCES = [
     pmid: '37991647',
     url: 'https://pubmed.ncbi.nlm.nih.gov/37991647/',
     takeaway: 'Die WHO-Leitlinie empfiehlt regelmäßige, strukturierte Bewegungs- und Rumpfprogramme als zentrale nicht-medikamentöse Maßnahme bei chronischem Kreuzschmerz.'
+  },
+  {
+    id: 'owen-2020',
+    title: 'Which specific modes of exercise training are most effective for treating low back pain? Network meta-analysis',
+    authors: 'Owen P. J., Miller C. T., Mundell N. L., Verswijveren S. J. J. M., Tagliaferri S. D., Brisby H., Bowe S. J., Belavy D. L.',
+    journal: 'British Journal of Sports Medicine (2020)',
+    pmid: '31666220',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/31666220/',
+    takeaway: 'Pilates (SUCRA 100 % für Schmerzreduktion), Krafttraining sowie Stabilisations-/Motor-Control-Übungen (SUCRA 80 % für Funktion) sind bei chronischen Kreuzschmerzen am wirksamsten; isoliertes Dehnen zeigte keinen signifikanten Vorteil.'
+  },
+  {
+    id: 'fernandez-2022',
+    title: 'Best Exercise Options for Reducing Pain and Disability in Adults With Chronic Low Back Pain: Pilates, Strength, Core-Based, and Mind-Body. A Network Meta-analysis',
+    authors: 'Fernández-Rodríguez R., Álvarez-Bueno C., Cavero-Redondo I. et al.',
+    journal: 'Journal of Orthopaedic & Sports Physical Therapy / JOSPT (2022)',
+    pmid: '35722759',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/35722759/',
+    takeaway: 'Pilates, Core-Stabilisation und Krafttraining senken Schmerz und Alltagseinschränkung bei chronischem Kreuzschmerz am stärksten; isoliertes Dehnen war bei Schmerzreduktion nicht signifikant überlegen.'
+  },
+  {
+    id: 'saragiotto-2016',
+    title: 'Motor control exercise for chronic non-specific low-back pain',
+    authors: 'Saragiotto B. T., Maher C. G., Yamato T. P., Costa L. O. P. et al.',
+    journal: 'Cochrane Database of Systematic Reviews (2016)',
+    pmid: '26742533',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/26742533/',
+    takeaway: 'Gezielte Motor-Control-Übungen (tiefe Bauch- und Rückenmuskulatur wie TVA und Multifidi) lindern Schmerz und verbessern Funktion deutlich gegenüber minimaler Versorgung.'
   }
+];
+
+export const PRACTICE_GUIDES = [
+  {
+    id: 'stretch-guide',
+    title: 'Intensives Dehnen (Grundregeln)',
+    items: [
+      'Die Dehnungen, die dir am schwersten fallen, adressieren meist die wichtigsten Bewegungseinschränkungen.',
+      'Bleibe immer im oberen Bereich eines gut erträglichen „Wohlfühlschmerzes“ – niemals stechender Gelenk- oder Nervenschmerz.',
+      'Bewege dich stets langsam, ruhig und bewusst in die Position hinein und wieder heraus.',
+      'Gehe nur so weit mit, wie es sicher möglich ist – aber probiere ungewohnte Positionen zumindest vorsichtig aus.',
+      'Taste dich Schritt für Schritt an die volle Technik heran: Schon ruhiges passives Dehnen ohne aktives Gegenspannen bringt große Fortschritte.',
+      'Übe lieber etwas weniger intensiv und halte dafür konstant bis zu 2 Minuten durch, als eine Übung mittendrin abzubrechen.'
+    ]
+  },
+  {
+    id: 'roll-guide',
+    title: 'Faszien-Rollmassage (Grundregeln)',
+    items: [
+      'Stellen, die sich beim Rollen am unangenehmsten anfühlen, profitieren oft am meisten.',
+      'Die Druckintensität darf nur so hoch sein, dass der Reiz noch als positiver, gut tolerierbarer Wohlfühlschmerz empfunden wird.',
+      'Rolle sehr langsam und kontrolliert – bevorzugt in Richtung Herz (unterstützt den venösen und lymphatischen Rückfluss).',
+      'Je nach Zeit und Gefühl kannst du eine Rollmassage mehrfach wiederholen und dabei den Druckwinkel leicht variieren.'
+    ]
+  },
+  {
+    id: 'trigger-guide',
+    title: 'Sanfte Triggerpunkt-Drucktechnik (Grundregeln)',
+    items: [
+      'Die druckempfindlichsten Punkte sind meist die wirksamsten – taste empfindliche Stellen vorab vorsichtig mit den Fingern ab.',
+      'Setze Ball, Stab oder Finger ruhig auf den Punkt und warte, bis der gut erträgliche Wohlfühlschmerz spürbar nachlässt.',
+      'Um anschließend wieder bis kurz vor die Wohlfühlgrenze zu kommen, kannst du den Druck leicht erhöhen, den Winkel etwas ändern oder die Stelle minimal versetzen.',
+      'Bei längeren Muskelbahnen oder größeren Flächen startest du immer dort, wo die größte Empfindlichkeit sitzt.'
+    ]
+  }
+];
+
+export const GLOSSARY = [
+  { term: 'Adduktoren', desc: 'Muskelgruppe an der Innenseite des Oberschenkels, die das Bein zur Körpermitte zieht.' },
+  { term: 'Anterior / Posterior Tilt', desc: 'Kippung des Beckens nach vorn (Hohlkreuz-Tendenz = Anterior Tilt) bzw. nach hinten-unten (Steißbein einrollen, unterer Rücken flach = Posterior Tilt).' },
+  { term: 'Bracing', desc: 'Rundum-Anspannung (360°) des gesamten Rumpfzylinders (Bauch, Flanken, Rücken), um die Wirbelsäule stabil zu schützen.' },
+  { term: 'BWS', desc: 'Brustwirbelsäule – der mittlere Abschnitt der Wirbelsäule zwischen Nacken und Lendenwirbelsäule.' },
+  { term: 'Contract & Relax', desc: 'Dehntechnik, bei der der Muskel erst 5–20 Sekunden leicht angespannt und danach bewusst entspannt wird, um tiefer in die Bewegung zu sinken.' },
+  { term: 'Dorsalextension', desc: 'Bewegung des Fußrückens nach oben Richtung Schienbein (wichtig für tiefe Kniebeugen und gesundes Gehen).' },
+  { term: 'Glutaeus medius', desc: 'Seitlicher Gesäßmuskel, der das Becken beim Gehen und Stehen stabilisiert.' },
+  { term: 'Impingement', desc: 'Schmerzhaftes Einklemmen von Weichteilen oder Kapselstrukturen im Gelenk (z. B. vorn in Schulter oder Hüfte).' },
+  { term: 'Isometrisch', desc: 'Muskelanspannung ohne äußere Bewegung des Gelenks (Haltearbeit).' },
+  { term: 'Latissimus dorsi', desc: 'Großer breiter Rückenmuskel, der vom unteren Rücken/Becken bis zum Oberarm zieht.' },
+  { term: 'LWS', desc: 'Lendenwirbelsäule – der untere Rücken zwischen Rippenbogen und Kreuzbein.' },
+  { term: 'McGill Big 3', desc: 'Drei rückenschonende Stabilisationsübungen nach Wirbelsäulen-Forscher Prof. Stuart McGill: Curl-Up, Side Plank (Seitstütz) und Bird-Dog.' },
+  { term: 'Motor Control', desc: 'Gezieltes Training der tiefen, stabilisierenden Rumpfmuskulatur (Zusammenspiel von Nervensystem und Muskel).' },
+  { term: 'Multifidi', desc: 'Kleine, tief liegende Muskeln direkt zwischen den einzelnen Wirbeln, die jedes Wirbelsäulensegment stabilisieren.' },
+  { term: 'Pectoralis major & minor', desc: 'Großer und kleiner Brustmuskel auf der Vorderseite des Brustkorbs (verkürzen oft durch langes Sitzen).' },
+  { term: 'Piriformis', desc: 'Tiefer Gesäßmuskel unter dem großen Gesäßmuskel, nahe dem Ischiasnerv.' },
+  { term: 'PNF', desc: 'Propriozeptive Neuromuskuläre Fazilitation – gezielter Wechsel aus isometrischem Anspannen und anschließendem tieferen Dehnen.' },
+  { term: 'PWA', desc: 'Progressive Web App – eine Webseite, die sich direkt ohne App-Store wie eine native App auf dem Handy installieren lässt.' },
+  { term: 'QL (Quadratus lumborum)', desc: 'Tiefer seitlicher Lendenmuskel zwischen Beckenkamm und unterster Rippe.' },
+  { term: 'Rectus femoris', desc: 'Mittlerer Anteil des vorderen Oberschenkelmuskels, der über Hüfte und Knie zieht.' },
+  { term: 'ROM', desc: 'Range of Motion – der aktive oder passive Bewegungsumfang eines Gelenks.' },
+  { term: 'Serratus anterior', desc: 'Vorderer Sägemuskel seitlich am Brustkorb; hält das Schulterblatt flach am Rumpf.' },
+  { term: 'Skapula', desc: 'Schulterblatt.' },
+  { term: 'SMR', desc: 'Self-Myofascial Release – Eigenmassage von Muskeln und Faszien mit Ball, Rolle oder Stab.' },
+  { term: 'Soleus & Gastrocnemius', desc: 'Die beiden Hauptmuskeln der Wade (Soleus tief/unten, Gastrocnemius oberflächlich/oben).' },
+  { term: 'Subscapularis', desc: 'Tiefer Muskel auf der Vorderseite des Schulterblatts (Richtung Achselhöhle), wichtig für die Schulter-Innenrotation.' },
+  { term: 'SUCRA', desc: 'Statistische Kennzahl aus Netzwerk-Meta-Analysen (0–100 %), wie wahrscheinlich eine Methode die wirksamste unter allen verglichenen Therapien ist.' },
+  { term: 'TFL (Tensor fasciae latae)', desc: 'Kleiner Muskel an der vorderen seitlichen Hüfte (knapp oberhalb der Hosentasche), der Spannung auf die Oberschenkel-Außenseite überträgt.' },
+  { term: 'TVA (Transversus abdominis)', desc: 'Tiefer querer Bauchmuskel – wirkt wie ein körpereigenes Korsett rund um Taille und Lendenwirbelsäule.' }
 ];
 
 export const BODYMAP_POINTS = [
@@ -2218,6 +2312,106 @@ export const EXERCISES = [
       'Einfache Variante: Auf den gebeugten Knien abstützen.',
       'Schwere Variante: Auf gestreckten Beinen (Füße hintereinander).'
     ]
+  },
+  {
+    id: 'pilates-pelvic-curl',
+    name: 'Schulterbrücke / Pelvic Curl (Clinical Pilates)',
+    phase: 3,
+    region: 'rumpf',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: false,
+    defaultSeconds: 90,
+    timerMode: 'hold',
+    targetZone: 'Segmentale LWS-Mobilität, Gesäß & tiefe Bauchmuskulatur (TVA)',
+    svgPose: 'supine-pelvic-curl',
+    bodyHotspots: [{ x: 50, y: 50, view: 'side' }],
+    image: null,
+    setup: [
+      'In Rückenlage auf die Matte legen, Knie gebeugt und Füße hüftbreit flach aufstellen.',
+      'Arme entspannt neben dem Körper ablegen, Wirbelsäule zunächst in neutraler Position.'
+    ],
+    execution: [
+      'Beim Ausatmen das Becken sanft nach hinten kippen (Posterior Tilt = unteren Rücken weich in die Matte schmiegen) und die Wirbelsäule langsam Wirbel für Wirbel nach oben aufrollen, bis Knie, Hüfte und Schultern eine gerade Linie bilden.',
+      'Oben kurz einatmen (Rippenbogen bleibt ruhig, Gesäß aktiv), beim nächsten Ausatmen kontrolliert Wirbel für Wirbel wieder abrollen (8–10 langsame Wiederholungen).'
+    ],
+    breathing: 'Ausatmen beim Auf- und Abrollen, oben in der Brücke kurz einatmen.',
+    commonMistakes: [
+      'Becken im Block hochreißen und oben ins Hohlkreuz überstrecken.',
+      'Knie nach außen fallen lassen.'
+    ]
+  },
+  {
+    id: 'pilates-dead-bug',
+    name: 'Dead Bug (Lendenwirbel-Stabilisation in Rückenlage)',
+    phase: 3,
+    region: 'rumpf',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: false,
+    defaultSeconds: 90,
+    timerMode: 'hold',
+    targetZone: 'Tiefe Rumpfmuskulatur (TVA) & Anti-Hohlkreuz-Kontrolle',
+    svgPose: 'supine-dead-bug',
+    bodyHotspots: [{ x: 50, y: 46, view: 'side' }],
+    image: null,
+    setup: [
+      'In Rückenlage Arme senkrecht zur Decke strecken und Beine im 90°-Winkel anheben (Tabletop-Position; Einsteiger-Variante: Füße aufgestellt lassen).',
+      'Unterer Rücken bleibt ruhig und neutral am Boden verankert.'
+    ],
+    execution: [
+      'Beim Ausatmen ein Bein langsam flach nach vorn strecken und gleichzeitig den gegenüberliegenden Arm über den Kopf absenken – nur so tief, wie die Lendenwirbelsäule keinen Millimeter ins Hohlkreuz ausweicht.',
+      'Beim Einatmen kontrolliert zur Mitte zurückführen und die Seite wechseln (5–8 langsame Wiederholungen pro Seite).'
+    ],
+    breathing: 'Beim Strecken von Arm und Bein ruhig ausatmen, beim Zurückführen einatmen.',
+    commonMistakes: [
+      'Unterer Rücken hebt vom Boden ab (dann Bein höher halten oder Füße zunächst aufstellen).'
+    ]
+  },
+  {
+    id: 'mcgill-curl-up',
+    name: 'McGill Curl-Up (Bandscheibenschonende Bauchkräftigung)',
+    phase: 3,
+    region: 'rumpf',
+    equipment: ['none'],
+    equipmentAlt: 'Ohne Geräte auf Matte',
+    travelFriendly: true,
+    bilateral: false,
+    defaultSeconds: 60,
+    timerMode: 'interval',
+    timerPhases: [
+      { label: 'Runde 1 · Halten', seconds: 8, cue: 'Kopf & Schulterblätter minimal als Einheit heben – Hände unter LWS' },
+      { label: 'Runde 1 · Ablegen', seconds: 2, cue: 'Sanft ablegen & atmen' },
+      { label: 'Runde 2 · Halten', seconds: 8, cue: 'Kinn bleibt neutral, kein Einrollen der LWS' },
+      { label: 'Runde 2 · Ablegen', seconds: 2, cue: 'Kurz lösen' },
+      { label: 'Runde 3 · Halten', seconds: 8, cue: 'Bracing halten – ruhige Atmung' },
+      { label: 'Runde 3 · Ablegen', seconds: 2, cue: 'Kurz lösen & gern aufgestelltes Bein wechseln' },
+      { label: 'Runde 4 · Halten', seconds: 8, cue: 'Nur wenige Zentimeter abheben' },
+      { label: 'Runde 4 · Ablegen', seconds: 2, cue: 'Kurz lösen' },
+      { label: 'Runde 5 · Halten', seconds: 8, cue: 'Stabile Rumpfspannung halten' },
+      { label: 'Runde 5 · Ablegen', seconds: 2, cue: 'Kurz lösen' },
+      { label: 'Runde 6 · Halten', seconds: 8, cue: 'Letzte Wiederholung sauber halten!' },
+      { label: 'Runde 6 · Beenden', seconds: 2, cue: 'Entspannt ablegen' }
+    ],
+    targetZone: 'Gerade & schräge Bauchmuskulatur ohne Beugungsstress der LWS',
+    svgPose: 'supine-mcgill-curlup',
+    bodyHotspots: [{ x: 50, y: 42, view: 'side' }],
+    image: null,
+    setup: [
+      'In Rückenlage ein Bein gestreckt ablegen und das andere Bein angewinkelt aufstellen (schützt die Lendenwirbelsäule vor dem Abflachen).',
+      'Beide Handflächen flach unter die natürliche Wölbung des unteren Rückens schieben.'
+    ],
+    execution: [
+      'Bauchmuskulatur leicht vorspannen (Bracing), dann Kopf, Nacken und Schulterblätter als starre Einheit nur wenige Zentimeter anheben – ohne das Kinn auf die Brust zu ziehen und ohne den Rücken in die Hände zu quetschen.',
+      '6–8 Sekunden halten, kurz ablegen und nach der Hälfte das aufgestellte Bein wechseln.'
+    ],
+    breathing: 'Während des Haltens flach und ruhig weiteratmen.',
+    commonMistakes: [
+      'Klassisches Sit-up mit rundem Rücken machen (belastet die Bandscheiben).',
+      'Kopf am Nacken nach vorn ziehen.'
+    ]
   }
 ];
 
@@ -2225,29 +2419,22 @@ export const ROUTINES = [
   {
     id: 'low-back-pain',
     title: 'Low Back Pain · Rücken-Entlastung',
-    subtitle: 'Evidenzbasierte Physio-Routine',
-    badge: 'Physio-Fokus',
+    subtitle: 'Evidenzbasiert: Clinical Pilates, Motor Control & McGill Big 3',
+    badge: 'Physio-Evidenz',
     accent: 'lime',
-    regions: ['rumpf', 'huefte-beine', 'bws-ruecken'],
-    goal: 'Löst Hüft-/Gesäßspannung, mobilisiert LWS & BWS schmerzfrei und stabilisiert nach McGill. Bei ausstrahlenden Schmerzen oder Taubheit ärztlich abklären.',
+    strictPoolOnly: true,
+    regions: ['rumpf', 'bws-ruecken'],
+    goal: 'Ausschließlich evidenzbasierte Übungen bei Kreuzschmerz (Clinical Pilates, Motor Control & McGill Big 3). Bei ausstrahlenden Schmerzen oder Taubheit ärztlich abklären.',
     exerciseIds: [
-      'ql-release',
-      'piriformis-release',
-      'glutaeus-medius-release',
-      'tfl-release',
-      'adduktor-release-ellenbogen',
       'cat-camel-lws',
-      'hueftkapsel-distraktion',
-      'couch-stretch',
-      'z-sitz-pnf',
-      'taube-auf-kiste',
-      'beinbeuger-stretch',
-      'luftberge-welle',
+      'pilates-pelvic-curl',
+      'pilates-dead-bug',
+      'mcgill-curl-up',
+      'mcgill-side-plank',
+      'mcgill-bird-dog',
       'bracing-atmung',
       'ruecken-stabilisierung-bauchatmung',
-      'mcgill-bird-dog',
-      'mcgill-side-plank',
-      'l-aktivierung'
+      'ruecken-stabilisierung-hueftbeugung'
     ]
   },
   {

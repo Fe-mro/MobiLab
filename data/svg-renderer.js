@@ -456,6 +456,26 @@ const POSE_SHAPES = {
     <path d="M72 64 L194 110" fill="none" stroke="${acc}" stroke-width="4.5" stroke-linecap="round"/>
     <path d="M76 66 L66 112 L88 112" fill="none" stroke="${C_BODY}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M84 68 L98 54" fill="none" stroke="${C_BODY}" stroke-width="3" stroke-linecap="round"/>
+  `,
+  'supine-pelvic-curl': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="56" cy="99" r="11" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M67 101 L94 102 L144 74 L176 112" fill="none" stroke="${acc}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M84 102 L132 108" fill="none" stroke="${C_BODY}" stroke-width="3" stroke-linecap="round"/>
+  `,
+  'supine-dead-bug': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="62" cy="99" r="11" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M73 101 L142 103" fill="none" stroke="${C_BODY}" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M90 101 L90 52 M90 101 L48 82" fill="none" stroke="${acc}" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M142 103 L142 64 L174 64 M142 103 L196 92" fill="none" stroke="${acc}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  `,
+  'supine-mcgill-curlup': (acc) => `
+    <line x1="20" y1="115" x2="220" y2="115" stroke="${C_FLOOR}" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="62" cy="84" r="11" fill="none" stroke="${C_BODY}" stroke-width="3.5"/>
+    <path d="M72 88 L104 102 L142 103 L196 108" fill="none" stroke="${C_BODY}" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M142 103 L164 76 L182 112" fill="none" stroke="${C_DIM}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="106" y="101" width="16" height="8" rx="3" fill="${acc}"/>
   `
 };
 

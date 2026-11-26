@@ -41,7 +41,7 @@ html, body {
   margin: 0 auto;
   background: var(--bg-base);
   position: relative;
-  padding-bottom: calc(144px + var(--safe-bottom));
+  padding-bottom: calc(168px + var(--safe-bottom));
   box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
 }
 
@@ -1005,4 +1005,108 @@ html, body {
   background: var(--text-dark);
   width: 0%;
   transition: width 0.25s linear;
+}
+
+/* Header Back & Info Buttons */
+.btn-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-info-pill {
+  background: var(--bg-elevated);
+  color: var(--lavender);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Ausklappbare Akkordeons im Info-Modal */
+.accordion {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.accordion summary {
+  list-style: none;
+  padding: 14px 16px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.94rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion summary::after {
+  content: "+";
+  font-size: 1.1rem;
+  color: var(--lime);
+  flex-shrink: 0;
+}
+
+.accordion[open] summary::after {
+  content: "−";
+}
+
+.accordion-body {
+  padding: 0 16px 14px;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+}
+
+.accordion-body h4 {
+  color: var(--lime);
+  margin: 10px 0 6px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.accordion-body ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.accordion-body li {
+  margin-bottom: 5px;
+  color: var(--text-primary);
+}
+
+.glossary-item {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.glossary-item:last-child {
+  border-bottom: none;
+}
+
+.glossary-item strong {
+  color: var(--lavender);
+  display: block;
+  margin-bottom: 2px;
 }
