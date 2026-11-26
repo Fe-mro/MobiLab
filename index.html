@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#121214" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MobiLab" />
+  <meta name="description" content="MobiLab – Evidenzbasierter Ganzkörper-Trainingsplan für Mobilisation, Faszientraining und Haltungsverbesserung." />
+  <title>MobiLab · Mobility, Faszien &amp; Haltung</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand">
+        <img src="./icons/icon-192.png" alt="MobiLab Icon" class="brand-icon" />
+        <div>
+          <span class="brand-name">MobiLab</span>
+          <span class="brand-sub" id="header-subtitle">Mobility · Faszien · Haltung</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-install-header" class="icon-pill hidden" type="button" title="Als App installieren">
+          <span>+ App</span>
+        </button>
+        <span id="offline-badge" class="status-dot" title="Offline bereit"></span>
+      </div>
+    </header>
+
+    <!-- Dezentes Installations-Banner -->
+    <div id="install-banner" class="install-banner hidden" role="region" aria-label="App installieren">
+      <div class="install-banner-text">
+        <strong>Als Handy-App installieren</strong>
+        <span>Für Vollbild, Offline-Zugriff &amp; Icon auf dem Homescreen.</span>
+      </div>
+      <div class="install-banner-actions">
+        <button id="btn-install-banner" class="btn-mini-lime" type="button">Anleitung</button>
+        <button id="btn-dismiss-banner" class="btn-mini-ghost" type="button" aria-label="Schließen">✕</button>
+      </div>
+    </div>
+
+    <!-- Main View Container -->
+    <main id="main-content" class="main-content" aria-live="polite"></main>
+
+    <!-- Schwebendes weißes 4-Tab-Dock (inspiriert vom Screenshot) -->
+    <nav class="bottom-dock" aria-label="Hauptnavigation">
+      <button class="dock-btn active" data-tab="home" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span>Start</span>
+      </button>
+      <button class="dock-btn" data-tab="builder" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="17" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Baukasten</span>
+      </button>
+      <button class="dock-btn" data-tab="library" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Übungen</span>
+      </button>
+      <button class="dock-btn" data-tab="posture" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v7m-4-5h8m-4 5l-3 6m3-6l3 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Haltung</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Übungs-Detail-Modal -->
+  <div id="exercise-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <div>
+          <span id="modal-phase-badge" class="badge"></span>
+          <h2 id="modal-title"></h2>
+        </div>
+        <button id="modal-close" class="btn-circle-dark" type="button" aria-label="Schließen">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Hands-Free Workout Player Overlay -->
+  <div id="workout-player" class="player-overlay hidden" role="dialog" aria-modal="true" aria-label="Trainings-Player">
+    <div class="player-top">
+      <button id="player-close" class="btn-circle-surface" type="button" aria-label="Training beenden">✕</button>
+      <div class="player-progress-wrap">
+        <span id="player-step-label">Übung 1 / 8</span>
+        <div class="player-progress-bar">
+          <div id="player-progress-fill" class="player-progress-fill"></div>
+        </div>
+      </div>
+      <button id="player-mute" class="btn-circle-surface" type="button" aria-label="Ton umschalten">🔊</button>
+    </div>
+
+    <div id="player-stage" class="player-stage"></div>
+
+    <!-- Weißes Timer-Control-Sheet (wie im Screenshot rechts) -->
+    <div class="player-sheet">
+      <div class="sheet-pill"></div>
+      <div id="player-phase-cue" class="player-phase-cue hidden"></div>
+      <div id="player-subbar" class="player-subbar hidden">
+        <div id="player-subbar-fill" class="player-subbar-fill"></div>
+      </div>
+      <div class="timer-row">
+        <div class="timer-meta">
+          <span class="timer-meta-label">Seite / Modus</span>
+          <strong id="player-side-label">Beidseitig</strong>
+        </div>
+        <div id="player-time-display" class="timer-clock">01:30</div>
+        <div class="timer-meta right">
+          <span class="timer-meta-label">Gesamt</span>
+          <strong id="player-total-left">12:00</strong>
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button id="btn-prev-ex" class="ctrl-btn-sub" type="button" title="Vorherige Übung">⏮</button>
+        <button id="btn-minus-15" class="ctrl-btn-text" type="button">-15s</button>
+        <button id="btn-play-pause" class="ctrl-btn-main" type="button" aria-label="Start oder Pause">▶</button>
+        <button id="btn-plus-15" class="ctrl-btn-text" type="button">+15s</button>
+        <button id="btn-next-ex" class="ctrl-btn-sub" type="button" title="Nächste Übung">⏭</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
